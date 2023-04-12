@@ -35,4 +35,5 @@ export class AppController {
   async register(data: RegisterRequestDto): Promise<boolean>{
     return await this.appService.register(data)
   }
+
 }

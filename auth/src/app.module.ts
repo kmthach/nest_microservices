@@ -5,7 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserToken } from './entities/user-token.entity';
 import { UserHashPassword } from './entities/user-password.entity';
 import { JwtModule } from '@nestjs/jwt';
-import { jwtConstants } from 'constants/jwt.constant';
+import { jwtConstants } from 'src/constants/jwt.constant';
+import { UserRole } from './entities/user-role.entity';
 
 @Module({
   imports: [
@@ -15,10 +16,10 @@ import { jwtConstants } from 'constants/jwt.constant';
       username: 'root',
       password: 'root',
       database: 'auth',
-      entities: [UserToken, UserHashPassword],
+      entities: [UserToken, UserHashPassword, UserRole],
       synchronize: true
     }),
-    TypeOrmModule.forFeature([UserToken, UserHashPassword]),
+    TypeOrmModule.forFeature([UserToken, UserHashPassword, UserRole]),
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,

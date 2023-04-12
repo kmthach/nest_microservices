@@ -8,6 +8,9 @@ import { LoginRequestDto } from './dtos/login-request.dto';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import { UnauthorizedExceptionFilter } from './filters/unauthorized-exception.filter';
 import { Request } from 'express';
+import { Roles } from './decorators/roles.decorator';
+import { Role } from './enums/role.enum';
+import { RoleGuard } from './guards/role/role.guard';
 
 
 @Controller()
@@ -15,26 +18,37 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  @UseGuards(AuthGuard)
-  getCurrentUser(@Req() request: Request): string {
-    
-    return request['payload']
+  getHello(){
+    return this.appService.getHello()
   }
 
+  @UseFilters(UnauthorizedExceptionFilter)
+  @Get('profile')
+  @UseGuards(AuthGuard, RoleGuard)
+  
+  @Roles(Role.User)
+  getCurrentUser(@Req() request: Request): string {
+    return request['user']
+  }
+
+  @UseFilters(UnauthorizedExceptionFilter)
   @Get('users')
   @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
   getUsers(){
     return this.appService.getUsers()
   }
 
   @Get('users/:id')
   @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
   getUserById(@Param('id') id: number){
     return this.appService.getUserById(id)
   }
 
   @Post('users')
   @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
   @UsePipes(new ValidationPipe())
   createUser(@Body() user: CreateUserDto){
     return this.appService.createUser(user)
@@ -42,11 +56,14 @@ export class AppController {
 
   @Get('tasks')
   @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
   getTasks() {
     return this.appService.getTasks()
   }
+
   @Get('tasks/:id')
   @UseGuards(AuthGuard)
+  @Roles(Role.Admin)
   getTaskById(@Param('id') id: number){
     return this.appService.getTaskById(id)
   }

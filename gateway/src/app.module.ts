@@ -27,7 +27,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         options: {
           port: 3007
         }
-      }
+      },
     ])
   ],
   controllers: [AppController],

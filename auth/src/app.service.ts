@@ -7,13 +7,16 @@ import { Repository } from 'typeorm';
 import { RegisterRequestDto } from './dtos/register-request.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { jwtConstants } from 'constants/jwt.constant';
+import { jwtConstants } from 'src/constants/jwt.constant';
 import { LoginRequestDto } from './dtos/login-request.dto';
+import { Role } from './enums/role.enum';
+import { UserRole } from './entities/user-role.entity';
 @Injectable()
 export class AppService {
   constructor(
     @InjectRepository(UserHashPassword) private userHashPassword: Repository<UserHashPassword>,
     @InjectRepository(UserToken) private userToken: Repository<UserToken>,
+    @InjectRepository(UserRole) private userRole: Repository<UserRole>,
     private jwtService: JwtService
   ){}
 
@@ -71,12 +74,23 @@ export class AppService {
           secret: jwtConstants.secret
         }
       )
-      return payload
+      const role: Role = await this.getRole(payload.username)
+      const data = {
+        username: payload.username,
+        role: role
+      }
+      return data
     }
     catch {
       throw new UnauthorizedException()
     }
     
+  }
+
+  private async getRole(username: string): Promise<Role>{
+    const user = await this.userRole.findOneBy({username: username})
+    return user.role
+
   }
 
 

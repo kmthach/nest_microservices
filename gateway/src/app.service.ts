@@ -18,7 +18,7 @@ export class AppService {
   constructor(
     @Inject('ACCOUNT_SERVICE') private account_client: ClientProxy,
     @Inject('TASK_SERVICE') private task_client: ClientProxy,
-    @Inject('AUTH_SERVICE') private auth_client: ClientProxy
+    @Inject('AUTH_SERVICE') private auth_client: ClientProxy,
   ){}
 
   getHello(): string {
@@ -95,8 +95,5 @@ export class AppService {
     catch {
       throw new UnauthorizedException()
     }
-  
-
-    
   }
 }

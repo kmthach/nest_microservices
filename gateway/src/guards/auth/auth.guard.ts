@@ -20,7 +20,7 @@ export class AuthGuard implements CanActivate {
       const pattern = 'AUTHHENTICATE_BY_TOKEN'
       try{
         const result = await this.authClient.send(pattern, {token}).toPromise()
-        request['payload'] = result
+        request['user'] = result
         return true
       }
       catch{
