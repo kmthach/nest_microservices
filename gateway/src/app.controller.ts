@@ -25,29 +25,28 @@ export class AppController {
   @UseFilters(UnauthorizedExceptionFilter)
   @Get('profile')
   @UseGuards(AuthGuard, RoleGuard)
-  
-  @Roles(Role.User)
+  @Roles(Role.User, Role.Admin)
   getCurrentUser(@Req() request: Request): string {
     return request['user']
   }
 
   @UseFilters(UnauthorizedExceptionFilter)
   @Get('users')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(Role.Admin)
   getUsers(){
     return this.appService.getUsers()
   }
 
   @Get('users/:id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(Role.Admin)
   getUserById(@Param('id') id: number){
     return this.appService.getUserById(id)
   }
 
   @Post('users')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(Role.Admin)
   @UsePipes(new ValidationPipe())
   createUser(@Body() user: CreateUserDto){
@@ -55,21 +54,21 @@ export class AppController {
   }
 
   @Get('tasks')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(Role.Admin)
   getTasks() {
     return this.appService.getTasks()
   }
 
   @Get('tasks/:id')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RoleGuard)
   @Roles(Role.Admin)
   getTaskById(@Param('id') id: number){
     return this.appService.getTaskById(id)
   }
 
   @Post('tasks')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, RoleGuard)
   @UsePipes(new ValidationPipe())
   createTask(@Body() task: CreateTaskDto){
     this.appService.createTask(task)
