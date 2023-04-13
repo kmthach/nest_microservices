@@ -1,5 +1,5 @@
 
-import { Body, Controller, Get, Param, Post, Req, UnauthorizedException, UseFilters, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, CacheTTL, Controller, Get, Param, Post, Req, UnauthorizedException, UseFilters, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AppService } from './app.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { CreateTaskDto } from './dtos/create-task.dto';
@@ -11,13 +11,15 @@ import { Request } from 'express';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from './enums/role.enum';
 import { RoleGuard } from './guards/role/role.guard';
+import { CacheInterceptor, CacheKey } from '@nestjs/cache-manager';
 
-
+@UseInterceptors(CacheInterceptor)
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
+  @CacheKey('123')
   getHello(){
     return this.appService.getHello()
   }
