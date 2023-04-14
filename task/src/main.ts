@@ -24,6 +24,16 @@ async function bootstrap() {
       port:3001
     }
   })
+  app.connectMicroservice({
+    transport: Transport.RMQ,
+    options: {
+      urls: ['amqp://root:root@localhost:5000'],
+      queue: 'task_queue',
+      queueOptions: {
+        durable: true
+      },
+    }
+  })
   
   await app.startAllMicroservices()
   await app.listen(3001)

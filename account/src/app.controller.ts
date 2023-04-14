@@ -34,7 +34,7 @@ export class AppController {
   @EventPattern('TASK_CREATED')
   updateUser(@Payload() data: CreateTaskDto){
     console.log('Handle task created event from rmq')
-    this.appService.updateUserById(data.user_id)
+    return this.appService.updateUserById(data.user_id)
   }
 
 

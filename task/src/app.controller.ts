@@ -3,12 +3,14 @@ import { AppService } from './app.service';
 import { MessagePattern, EventPattern, ClientProxy } from '@nestjs/microservices';
 import { Task } from './entities/task.entity';
 import { CreateTaskDto, GetTaskDto } from './dtos/task.dto';
+import { QueryRunner } from 'typeorm';
 
 @Controller()
 export class AppController {
   constructor(
     private readonly appService: AppService) {}
 
+  queryRunner: QueryRunner
   @Get()
   getHello(): string {
     return this.appService.getHello();
@@ -29,6 +31,17 @@ export class AppController {
   @EventPattern('CREATE_TASK')
   async createTasks(data: CreateTaskDto) {
     console.log('Handle create task Event')
-    this.appService.createTask(data)
+    this.queryRunner = await this.appService.createTask(data)
   }
+
+  @EventPattern('UPDATE_USER')
+  async commit(data: boolean) {
+    if(data){
+      this.appService.approveChange(this.queryRunner)
+    }
+    else {
+      this.appService.rejectChange(this.queryRunner)
+    }
+  }
+
 }

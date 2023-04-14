@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [TypeOrmModule.forRoot({
@@ -14,7 +15,20 @@ import { UserEntity } from './entities/user.entity';
     database: 'user',
     entities: [UserEntity],
     synchronize: true
-  }), TypeOrmModule.forFeature([UserEntity])],
+  }), TypeOrmModule.forFeature([UserEntity]),
+  ClientsModule.register([
+    {
+      name: 'TASK_QUEUE_SERVICE',
+      transport: Transport.RMQ,
+      options: {
+        urls: ['amqp://root:root@localhost:5000'],
+        queue: 'task_queue',
+        queueOptions: {
+          durable: true
+        }
+      }
+    }
+  ])],
   controllers: [AppController],
   providers: [AppService],
 })
