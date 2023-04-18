@@ -10,7 +10,7 @@ export class AppController {
   constructor(
     private readonly appService: AppService) {}
 
-  queryRunner: QueryRunner
+
   @Get()
   getHello(): string {
     return this.appService.getHello();
@@ -31,17 +31,8 @@ export class AppController {
   @EventPattern('CREATE_TASK')
   async createTasks(data: CreateTaskDto) {
     console.log('Handle create task Event')
-    this.queryRunner = await this.appService.createTask(data)
+    await this.appService.createTask(data)
   }
 
-  @EventPattern('UPDATE_USER')
-  async commit(data: boolean) {
-    if(data){
-      this.appService.approveChange(this.queryRunner)
-    }
-    else {
-      this.appService.rejectChange(this.queryRunner)
-    }
-  }
 
 }

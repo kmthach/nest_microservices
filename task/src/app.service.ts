@@ -4,6 +4,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { CreateTaskDto } from './dtos/task.dto';
 import { ClientProxy } from '@nestjs/microservices';
+import { InjectAmqpConnection } from 'nestjs-amqp';
+import { Connection, ConsumeMessage } from 'amqplib';
+import { Channel } from 'amqp-connection-manager';
 
 
 @Injectable()
@@ -13,8 +16,9 @@ export class AppService {
     private tasksRepository: Repository<Task>,
     @Inject('TASK_QUEUE_SERVICE')
     private readonly taskQueueService: ClientProxy,
-    private readonly dataSource: DataSource
-
+    private readonly dataSource: DataSource,
+    @InjectAmqpConnection('rabbitmq') 
+    private connection: Connection
   ){}
   getHello(): string {
     return 'Hello World!';
@@ -34,26 +38,54 @@ export class AppService {
     await queryRunner.connect()
     await queryRunner.startTransaction()
     try{
-      console.log(newTask)
       await queryRunner.manager.insert(Task, newTask)
       const pattern = 'TASK_CREATED'
+
+      const channel = await this.connection.createChannel()
+      await channel.assertQueue('task_queue')
+
+      let result: any
+      const consumer = (channel: Channel) => async (msg: ConsumeMessage | null): Promise<any> => {
+        if (msg) {
+          channel.ack(msg)
+          const json_msg = JSON.parse(msg.content.toString())
+          if (json_msg.status){
+            await queryRunner.commitTransaction()
+            result = json_msg
+            console.log(json_msg)
+            console.log('Transaction commited')
+          }
+          else if(json_msg.status !== undefined){
+            await queryRunner.rollbackTransaction()
+            result = true
+            console.log('Transaction rollbacked')
+          }
+          
+        }
+      }
+      await channel.consume('task_queue', consumer(channel))
       await this.taskQueueService.emit(pattern, newTask).toPromise()
+
+      setTimeout(async () => {
+        if (!result) {
+          await queryRunner.rollbackTransaction()
+          console.log('Transaction not done yet')
+          console.log('Transaction rollbacked')
+        }
+        else {
+          console.log('Transaction already done')
+        }
+      }
+
+      ,5000)
       
-      return queryRunner
     }
     catch {
       queryRunner.rollbackTransaction()
     }
   }
-  async approveChange(queryRunner: QueryRunner){
-    console.log('approve change')
-    await queryRunner.commitTransaction()
-    await queryRunner.release()
-  }
 
-  async rejectChange(queryRunner: QueryRunner){
-    console.log('reject change')
-    await queryRunner.rollbackTransaction()
-    await queryRunner.release()
-  }
+
+
+  
 }

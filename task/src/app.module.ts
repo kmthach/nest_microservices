@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Task } from './entities/task.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AmqpModule } from 'nestjs-amqp';
 
 @Module({
   imports: [
@@ -29,7 +30,14 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
           }
         }
       }
-    ])],
+    ]),
+    AmqpModule.forRoot({
+      name: 'rabbitmq',
+      hostname: 'localhost',
+      port: 5000,
+      username: 'root',
+      password: 'root',
+    })],
   controllers: [AppController],
   providers: [AppService],
 })

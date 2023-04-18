@@ -70,8 +70,8 @@ export class AppController {
   }
 
   @Post('tasks')
-  @UseGuards(AuthGuard, RoleGuard)
-  @UsePipes(new ValidationPipe())
+  // @UseGuards(AuthGuard, RoleGuard)
+  // @UsePipes(new ValidationPipe())
   createTask(@Body() task: CreateTaskDto){
     this.appService.createTask(task)
   }

@@ -4,31 +4,29 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { AmqpModule } from 'nestjs-amqp';
 
 @Module({
-  imports: [TypeOrmModule.forRoot({
-    type: 'mysql',
-    host: 'localhost',
-    port: 4000,
-    username: 'root',
-    password: 'root',
-    database: 'user',
-    entities: [UserEntity],
-    synchronize: true
-  }), TypeOrmModule.forFeature([UserEntity]),
-  ClientsModule.register([
-    {
-      name: 'TASK_QUEUE_SERVICE',
-      transport: Transport.RMQ,
-      options: {
-        urls: ['amqp://root:root@localhost:5000'],
-        queue: 'task_queue',
-        queueOptions: {
-          durable: true
-        }
-      }
-    }
-  ])],
+  imports: [
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: 'localhost',
+      port: 4000,
+      username: 'root',
+      password: 'root',
+      database: 'user',
+      entities: [UserEntity],
+      synchronize: true
+    }), 
+    TypeOrmModule.forFeature([UserEntity]),
+    AmqpModule.forRoot({
+      name: 'rabbitmq',
+      hostname: 'localhost',
+      port: 5000,
+      username: 'root',
+      password: 'root',
+    })
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

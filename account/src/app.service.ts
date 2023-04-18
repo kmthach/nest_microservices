@@ -2,18 +2,19 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { Repository } from 'typeorm';
-import { ClientProxy } from '@nestjs/microservices';
+import {Connection} from 'amqplib'
 
+import { InjectAmqpConnection } from 'nestjs-amqp';
 @Injectable()
 export class AppService {
 
   constructor(
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
-    @Inject('TASK_QUEUE_SERVICE')
-    private taskQueueService: ClientProxy
+    @InjectAmqpConnection('rabbitmq')
+    private connection: Connection
   ){}
-  
+
   getHello(): string{
     return 'Hello World'
   }
@@ -32,23 +33,45 @@ export class AppService {
   async updateUserById(id: number){
     const user = await this.usersRepository.findOneBy({id})
     user.num_tasks+=1
-    if (user.num_tasks < 13) {
+    if (user.num_tasks < 21) {
       try{
         await this.usersRepository.save(user)
-        const pattern = 'UPDATE_USER'
-        this.taskQueueService.emit(pattern, true)
+        const payload = {
+          status: true
+        }
+        
+        this.emitEvent(payload, 'task_queue')
       }
       catch {
-        const pattern = 'UPDATE_USER'
-        this.taskQueueService.emit(pattern, false)
+        const payload = {
+          status: false
+        }
+        
+        this.emitEvent(payload, 'task_queue')
       }
     }
     else {
-      const pattern = 'UPDATE_USER'
-      this.taskQueueService.emit(pattern, false)
+      const payload = {
+        status: false
+      }
+      
+      this.emitEvent(payload, 'task_queue')
     }
-    
-    
+  }
+
+  async emitEvent(payload: any, queue: string) {
+    try {
+ 
+      const channel = await this.connection.createChannel()
+      await channel.assertQueue(queue)
+      channel.sendToQueue(queue, Buffer.from(JSON.stringify(payload)))
+
+    }
+    catch (e){
+      console.log('Error emit event')
+      throw e
+      
+    }
   }
 
 }
