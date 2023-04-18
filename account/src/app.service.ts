@@ -33,7 +33,7 @@ export class AppService {
   async updateUserById(id: number){
     const user = await this.usersRepository.findOneBy({id})
     user.num_tasks+=1
-    if (user.num_tasks < 21) {
+    if (user.num_tasks < 24) {
       try{
         await this.usersRepository.save(user)
         const payload = {

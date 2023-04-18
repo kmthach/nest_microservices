@@ -51,25 +51,28 @@ export class AppService {
           const json_msg = JSON.parse(msg.content.toString())
           if (json_msg.status){
             await queryRunner.commitTransaction()
+            await channel.close()
             result = json_msg
             console.log(json_msg)
             console.log('Transaction commited')
           }
           else if(json_msg.status !== undefined){
             await queryRunner.rollbackTransaction()
+            await channel.close()
             result = true
             console.log('Transaction rollbacked')
           }
           
         }
       }
+
       await channel.consume('task_queue', consumer(channel))
       await this.taskQueueService.emit(pattern, newTask).toPromise()
-
       setTimeout(async () => {
         if (!result) {
-          await queryRunner.rollbackTransaction()
           console.log('Transaction not done yet')
+          await queryRunner.rollbackTransaction()
+          
           console.log('Transaction rollbacked')
         }
         else {
@@ -81,7 +84,7 @@ export class AppService {
       
     }
     catch {
-      queryRunner.rollbackTransaction()
+      await queryRunner.rollbackTransaction()
     }
   }
 
