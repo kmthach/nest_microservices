@@ -1,27 +1,21 @@
+
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserToken } from './entities/user-token.entity';
-import { UserHashPassword } from './entities/user-password.entity';
+
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from 'src/constants/jwt.constant';
-import { UserRole } from './entities/user-role.entity';
+
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AmqpModule } from 'nestjs-amqp';
+import { MongooseModule } from '@nestjs/mongoose';
+import {UserHashPassword, UserHashPasswordSchema } from './schemas/user-password.schema';
+import { UserToken, UserTokenSchema } from './schemas/user-token.schema';
+import { UserRole, UserRoleSchema } from './schemas/user-role.schema';
+
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      port: 8000,
-      username: 'root',
-      password: 'root',
-      database: 'auth',
-      entities: [UserToken, UserHashPassword, UserRole],
-      synchronize: true
-    }),
-    TypeOrmModule.forFeature([UserToken, UserHashPassword, UserRole]),
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
@@ -47,7 +41,21 @@ import { AmqpModule } from 'nestjs-amqp';
       username: 'root',
       password: 'root',
     }),
-    
+    MongooseModule.forRoot(
+      'mongodb://localhost:1111',
+      {
+        // user: 'rootUser',
+        // pass: 'rootPass',
+        dbName: 'auth',
+        directConnection:true,
+        replicaSet: 'rs0',
+        autoCreate: true
+      }),
+    MongooseModule.forFeature([
+      { name: UserHashPassword.name, schema: UserHashPasswordSchema },
+      { name: UserToken.name, schema: UserTokenSchema },
+      { name: UserRole.name, schema: UserRoleSchema },
+    ])
   ],
   controllers: [AppController],
   providers: [AppService],

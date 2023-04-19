@@ -10,12 +10,6 @@ import { CacheConfigService } from './services/cache-config.service';
 
 @Module({
   imports: [
-    CacheModule.registerAsync({
-      useFactory: async () => ({
-        store: await redisStore({ttl: 5000}),
-        useClass: CacheConfigService
-      })
-    }),
     ClientsModule.register([
       {
         name: 'ACCOUNT_SERVICE', 

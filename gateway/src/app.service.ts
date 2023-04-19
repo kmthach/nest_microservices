@@ -11,8 +11,7 @@ import { LoginEvent } from './events/login.events';
 
 import { RegisterEvent } from './events/register.events';
 
-import { CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+
 
 @Injectable()
 export class AppService {
@@ -20,14 +19,13 @@ export class AppService {
     @Inject('ACCOUNT_SERVICE') private account_client: ClientProxy,
     @Inject('TASK_SERVICE') private task_client: ClientProxy,
     @Inject('AUTH_SERVICE') private auth_client: ClientProxy,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache
+
   ){}
   
 
 
-  async getHello(): Promise<string> {
-    await this.cacheManager.set('greetings','ok')
-    return await this.cacheManager.get('greetings')
+  getHello(): string {
+    return 'Hello'
   }
 
   getUsers(): Observable<UserEntity[]>{

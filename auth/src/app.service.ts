@@ -1,32 +1,32 @@
 import { Connection, ConsumeMessage } from 'amqplib';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { UserHashPassword } from './entities/user-password.entity';
-import { UserToken } from './entities/user-token.entity';
 import { AuthByTokenRequestDto } from './dtos/auth-request.dto';
-import { DataSource, Repository, QueryRunner } from 'typeorm';
-import { RegisterRequestDto } from './dtos/register-request.dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from 'src/constants/jwt.constant';
 import { LoginRequestDto } from './dtos/login-request.dto';
 import { Role } from './enums/role.enum';
-import { UserRole } from './entities/user-role.entity';
 import { InjectAmqpConnection } from 'nestjs-amqp';
 import { Channel } from 'amqp-connection-manager';
 import { ClientProxy } from '@nestjs/microservices';
+import { UserHashPassword } from './schemas/user-password.schema';
+import {  InjectConnection, InjectModel } from '@nestjs/mongoose';
+import  mongoose, { Model, mongo } from 'mongoose';
+import { UserToken } from './schemas/user-token.schema';
+import { UserRole } from './schemas/user-role.schema';
+
 @Injectable()
 export class AppService {
   constructor(
-    @InjectRepository(UserHashPassword) private userHashPassword: Repository<UserHashPassword>,
-    @InjectRepository(UserToken) private userToken: Repository<UserToken>,
-    @InjectRepository(UserRole) private userRole: Repository<UserRole>,
     private jwtService: JwtService,
-    private readonly dataSource: DataSource,
     @InjectAmqpConnection('rabbitmq') 
     private connection: Connection,
     @Inject('USER_QUEUE_SERVICE') 
-    private userQueueService: ClientProxy
+    private userQueueService: ClientProxy,
+    @InjectConnection() private readonly mgConnection: mongoose.Connection,
+    @InjectModel(UserHashPassword.name) private userHashPasswordModel: Model<UserHashPassword>,
+    @InjectModel(UserToken.name) private userTokenModel: Model<UserToken>,
+    @InjectModel(UserRole.name) private userRoleModel: Model<UserRole>
   ){}
 
   getHello(): string {
@@ -37,17 +37,21 @@ export class AppService {
     const saltOrRounds = 10
     const hashpassword = await bcrypt.hash(userHashPassword.password, saltOrRounds)
     userHashPassword.password = hashpassword
-
-    const queryRunner: QueryRunner = this.dataSource.createQueryRunner()
-    await queryRunner.connect()
-    await queryRunner.startTransaction()
-
+   
+    const session = await this.mgConnection.startSession()
+    session.startTransaction();
     try{
-      const maxId = await queryRunner.manager.maximum(UserHashPassword, "id")
-      userHashPassword.id = maxId + 1
-      await queryRunner.manager.save(UserHashPassword, userHashPassword)
-      const pattern = 'NEW_USER_CREATED'
+      const newUser = new this.userHashPasswordModel(userHashPassword)
 
+      const defaultUserRole = new UserRole()
+      defaultUserRole.role = Role.User
+      defaultUserRole.username = userHashPassword.username
+
+      const newUserRole = new this.userRoleModel(defaultUserRole)
+      await this.userHashPasswordModel.create([newUser], {session: session})
+      await this.userRoleModel.create([newUserRole], {session: session})
+
+      const pattern = 'NEW_USER_CREATED'
       const channel = await this.connection.createChannel()
       await channel.assertQueue('user_queue')
 
@@ -57,14 +61,14 @@ export class AppService {
           channel.ack(msg)
           const json_msg = JSON.parse(msg.content.toString())
           if (json_msg.status){
-            await queryRunner.commitTransaction()
+            await session.commitTransaction()
             await channel.close()
             result = json_msg
             console.log(json_msg)
             console.log('Transaction commited')
           }
           else if(json_msg.status !== undefined){
-            await queryRunner.rollbackTransaction()
+            await session.abortTransaction()
             await channel.close()
             result = true
             console.log('Transaction rollbacked')
@@ -79,7 +83,7 @@ export class AppService {
         setTimeout(async () => {
           if (!result) {
             console.log('Transaction not done yet')
-            await queryRunner.rollbackTransaction()
+            await session.abortTransaction()
             console.log('Transaction rollbacked')
             resolve('Fail to create new account')
           }
@@ -92,16 +96,16 @@ export class AppService {
       })
       return await waiting
     }
-    catch {
-      await queryRunner.rollbackTransaction()
+    catch (e){
+      await session.abortTransaction()
+      throw e
     }
-    
     
   }
 
 
   async login(request: LoginRequestDto): Promise<string>{
-    const user = await this.userHashPassword.findOneBy({username: request.username})
+    const user = await this.userHashPasswordModel.findOne({username: request.username})
     if (user){
       const result =  await bcrypt.compare(request.password, user.password)
       if(result){
@@ -111,11 +115,11 @@ export class AppService {
         const token =  await this.jwtService.signAsync(payload)
         const data = this.jwtService.decode(token)
 
-        const userToken = new UserToken()
+        const userToken = new this.userTokenModel()
         userToken.token = token
         userToken.username = request.username
         userToken.expireDate = data['exp']
-        await this.userToken.insert(userToken)
+        await userToken.save()
         return token
       }
       else {
@@ -150,9 +154,8 @@ export class AppService {
   }
 
   private async getRole(username: string): Promise<Role>{
-    const user = await this.userRole.findOneBy({username: username})
+    const user = await this.userRoleModel.findOne({username: username})
     return user.role
-
   }
 
 
