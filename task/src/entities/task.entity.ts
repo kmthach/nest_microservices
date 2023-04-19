@@ -1,9 +1,9 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class Task {
-    @PrimaryGeneratedColumn()
-    id: number
+    @PrimaryColumn()
+    taskId: number
 
     @Column()
     title: string
@@ -11,6 +11,4 @@ export class Task {
     @Column()
     detail: string
 
-    @Column()
-    user_id: number 
 }

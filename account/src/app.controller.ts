@@ -1,8 +1,9 @@
 import { Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
-import { EventPattern, MessagePattern, Payload } from '@nestjs/microservices';
-import { CreateUserDto, GetUserDto } from './dtos/user.dto';
-import { CreateTaskDto } from './dtos/create-task.dto';
+import { EventPattern, GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
+import { CreateUserDto, GetUserDto, UserById } from './dtos/user.dto';
+import { CreateUserTaskDto } from './dtos/create-task.dto';
+import { Metadata, ServerUnaryCall } from '@grpc/grpc-js';
 
 
 @Controller()
@@ -25,18 +26,22 @@ export class AppController {
     return await this.appService.getUserById(data.id)
   }
   
-  @EventPattern('CREATE_USER')
+  @EventPattern('NEW_USER_CREATED')
   createUser(data: CreateUserDto){
     console.log('handle createuser event ')
     this.appService.createUser(data)
   }
 
   @EventPattern('TASK_CREATED')
-  updateUser(@Payload() data: CreateTaskDto){
+  createUserTask(@Payload() data: CreateUserTaskDto){
     console.log('Handle task created event from rmq')
-    return this.appService.updateUserById(data.user_id)
+    return this.appService.createUserTask(data)
   }
 
+  @GrpcMethod('UsersService', 'FindOne')
+  async findOne(data: UserById, metadata: Metadata, call: ServerUnaryCall<any, any>): Promise<GetUserDto> {
+    return await this.appService.getUserById(data.id)
+  }
 
   
 }

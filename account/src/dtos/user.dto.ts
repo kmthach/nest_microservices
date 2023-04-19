@@ -3,7 +3,7 @@ import { IsEmpty, IsNotEmpty } from "class-validator"
 export class GetUserDto{
     id: number
     username: string
-    password: string
+    email: string
 }
 
 export class CreateUserDto{
@@ -14,8 +14,10 @@ export class CreateUserDto{
     username: string
 
     @IsNotEmpty()
-    password: string
+    email: string
+}
 
+export class UserById {
     @IsNotEmpty()
-    num_tasks: number
+    id: number
 }

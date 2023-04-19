@@ -1,7 +1,7 @@
 import { IsEmpty, IsNotEmpty } from "class-validator"
 
 
-export class CreateUserDto{
+export class RegisterDto{
     @IsEmpty()
     id: number
 
@@ -12,5 +12,5 @@ export class CreateUserDto{
     password: string
 
     @IsNotEmpty()
-    num_tasks: number
+    email: string
 }

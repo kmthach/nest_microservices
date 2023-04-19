@@ -10,6 +10,6 @@ export class UserHashPassword{
     username: string
 
     @Column()
-    hashpassword: string
+    password: string
 
 }

@@ -1,10 +1,13 @@
+
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from './entities/user.entity';
+import { User } from './entities/user.entity';
+
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AmqpModule } from 'nestjs-amqp';
+import { UserTask } from './entities/user_task.entity';
 
 @Module({
   imports: [
@@ -15,10 +18,10 @@ import { AmqpModule } from 'nestjs-amqp';
       username: 'root',
       password: 'root',
       database: 'user',
-      entities: [UserEntity],
+      entities: [User, UserTask],
       synchronize: true
     }), 
-    TypeOrmModule.forFeature([UserEntity]),
+    TypeOrmModule.forFeature([User, UserTask]),
     AmqpModule.forRoot({
       name: 'rabbitmq',
       hostname: 'localhost',

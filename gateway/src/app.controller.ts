@@ -1,17 +1,18 @@
 
 import { Body, CacheTTL, Controller, Get, Param, Post, Req, UnauthorizedException, UseFilters, UseGuards, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AppService } from './app.service';
-import { CreateUserDto } from './dtos/create-user.dto';
+
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { AuthGuard } from './guards/auth/auth.guard';
 import { LoginRequestDto } from './dtos/login-request.dto';
-import { RegisterRequestDto } from './dtos/register-request.dto';
+
 import { UnauthorizedExceptionFilter } from './filters/unauthorized-exception.filter';
 import { Request } from 'express';
 import { Roles } from './decorators/roles.decorator';
 import { Role } from './enums/role.enum';
 import { RoleGuard } from './guards/role/role.guard';
 import { CacheInterceptor, CacheKey } from '@nestjs/cache-manager';
+import { RegisterDto } from './dtos/register.dto';
 
 @UseInterceptors(CacheInterceptor)
 @Controller()
@@ -47,13 +48,7 @@ export class AppController {
     return this.appService.getUserById(id)
   }
 
-  @Post('users')
-  @UseGuards(AuthGuard, RoleGuard)
-  @Roles(Role.Admin)
-  @UsePipes(new ValidationPipe())
-  createUser(@Body() user: CreateUserDto){
-    return this.appService.createUser(user)
-  }
+
 
   @Get('tasks')
   @UseGuards(AuthGuard, RoleGuard)
@@ -70,8 +65,8 @@ export class AppController {
   }
 
   @Post('tasks')
-  // @UseGuards(AuthGuard, RoleGuard)
-  // @UsePipes(new ValidationPipe())
+  @UseGuards(AuthGuard, RoleGuard)
+  @UsePipes(new ValidationPipe())
   createTask(@Body() task: CreateTaskDto){
     this.appService.createTask(task)
   }
@@ -84,10 +79,9 @@ export class AppController {
 
   }
 
-  @UseFilters(UnauthorizedExceptionFilter)
   @Post('register')
   @UsePipes(new ValidationPipe())
-  register(@Body() registerRequest: RegisterRequestDto){
-    return this.appService.register(registerRequest)
+  register(@Body() registerDto: RegisterDto){
+    return this.appService.register(registerDto)
   }
 }

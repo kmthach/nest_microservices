@@ -2,7 +2,7 @@ import { Inject, Injectable, HttpException } from '@nestjs/common';
 import { Task } from './entities/task.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryRunner, Repository } from 'typeorm';
-import { CreateTaskDto } from './dtos/task.dto';
+import { CreateTaskDto } from './dtos/create-task.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectAmqpConnection } from 'nestjs-amqp';
 import { Connection, ConsumeMessage } from 'amqplib';
@@ -28,16 +28,18 @@ export class AppService {
     return this.tasksRepository.find()
   }
 
-  async getTaskById(id: number): Promise<Task>{
-    return this.tasksRepository.findOneBy({id})
+  async getTaskById(taskId: number): Promise<Task>{
+    return this.tasksRepository.findOneBy({taskId})
   }
-  async createTask(newTask: Task){
+  async createTask(newTask: CreateTaskDto){
     // await this.tasksRepository.insert(createTaskDto)
 
     const queryRunner = this.dataSource.createQueryRunner()
     await queryRunner.connect()
     await queryRunner.startTransaction()
     try{
+      const maxId = await queryRunner.manager.maximum(Task, "taskId")
+      newTask.taskId = maxId + 1
       await queryRunner.manager.insert(Task, newTask)
       const pattern = 'TASK_CREATED'
 

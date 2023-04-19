@@ -2,8 +2,9 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { AppService } from './app.service';
 import { MessagePattern, EventPattern, ClientProxy } from '@nestjs/microservices';
 import { Task } from './entities/task.entity';
-import { CreateTaskDto, GetTaskDto } from './dtos/task.dto';
+import { GetTaskDto } from './dtos/get-task.dto';
 import { QueryRunner } from 'typeorm';
+import { CreateTaskDto } from './dtos/create-task.dto';
 
 @Controller()
 export class AppController {

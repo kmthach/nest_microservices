@@ -2,7 +2,10 @@ import { IsEmpty, IsNotEmpty } from "class-validator"
 
 export class CreateTaskDto{
     @IsEmpty()
-    id: number
+    taskId: number
+
+    @IsNotEmpty()
+    userId: number
 
     @IsNotEmpty()
     title: string
@@ -10,7 +13,5 @@ export class CreateTaskDto{
     @IsNotEmpty()
     detail: string
 
-    @IsNotEmpty()
-    user_id: number
 
 }
